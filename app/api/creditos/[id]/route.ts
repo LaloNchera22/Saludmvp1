@@ -20,10 +20,17 @@ export async function GET(
       cuotas (*)
     `)
     .eq('id', params.id)
-    .single()
+    .eq('paciente_id', user.id)
+    .maybeSingle()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 404 })
+  if (error) {
+    console.error('[creditos/id] Error fetching credito:', error)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
 
-  // RLS garantiza que solo el paciente dueño o un admin puede ver esto
+  if (!data) {
+    return NextResponse.json({ error: 'Crédito no encontrado' }, { status: 404 })
+  }
+
   return NextResponse.json(data)
 }
