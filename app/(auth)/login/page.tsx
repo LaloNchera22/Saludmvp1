@@ -43,7 +43,7 @@ export default function LoginPage() {
       .from('profiles')
       .select('rol')
       .eq('id', data.user.id)
-      .single()
+      .single() as { data: { rol: string } | null; error: unknown }
 
     router.push(profile?.rol === 'admin' ? '/admin' : '/paciente')
     router.refresh()
