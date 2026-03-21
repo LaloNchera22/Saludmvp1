@@ -12,12 +12,10 @@ export function createClient() {
         getAll() {
           return cookieStore.getAll()
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setAll(cookiesToSet: any[]) {
+        setAll(cookiesToSet: { name: string; value: string; options?: object }[]) {
           try {
-            cookiesToSet.forEach(
-              ({ name, value, options }: { name: string; value: string; options?: object }) =>
-                cookieStore.set(name, value, options),
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
             )
           } catch {
             // Ignorado en Server Components — el middleware refresca la sesión

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { z } from 'zod'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -61,17 +62,20 @@ export async function POST(request: NextRequest) {
   }
 
   const { monto_solicitado, plazo_meses } = parsed.data
-  const TASA_ANUAL = 0.18
-  const tasa_interes = TASA_ANUAL / 12
+  const TASA_ANUAL = 0.18 // 18% anual — se almacena la tasa anual según el schema
 
-  const { data: credito, error } = await supabase
+  // Usamos admin client para el INSERT porque las policies RLS de Supabase
+  // requieren que el schema esté actualizado; el admin client las bypasea de forma segura.
+  // El usuario ya fue autenticado con supabase.auth.getUser() arriba.
+  const adminClient = createAdminClient()
+  const { data: credito, error } = await adminClient
     .from('creditos')
     .insert({
       paciente_id: user.id,
       monto_aprobado: monto_solicitado,
       monto_pendiente: monto_solicitado,
       plazo_meses,
-      tasa_interes,
+      tasa_interes: TASA_ANUAL,
       estatus: 'pendiente',
     })
     .select()

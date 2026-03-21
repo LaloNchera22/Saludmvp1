@@ -146,10 +146,14 @@ create policy "insert_propio_perfil"
   on public.profiles for insert
   with check (id = auth.uid());
 
--- creditos: paciente ve los suyos; admin ve todos
+-- creditos: paciente ve los suyos e inserta los suyos; admin gestiona todo
 create policy "paciente_ver_propios_creditos"
   on public.creditos for select
   using (paciente_id = auth.uid() or public.mi_rol() = 'admin');
+
+create policy "paciente_insertar_credito"
+  on public.creditos for insert
+  with check (paciente_id = auth.uid());
 
 create policy "admin_gestionar_creditos"
   on public.creditos for all
@@ -166,10 +170,14 @@ create policy "paciente_ver_propias_cuotas"
     or public.mi_rol() = 'admin'
   );
 
--- membresias: paciente ve las suyas; admin ve todo
+-- membresias: paciente ve e inserta las suyas; admin gestiona todo
 create policy "paciente_ver_propias_membresias"
   on public.membresias for select
   using (paciente_id = auth.uid() or public.mi_rol() = 'admin');
+
+create policy "paciente_insertar_membresia"
+  on public.membresias for insert
+  with check (paciente_id = auth.uid());
 
 -- membresias_modulos: sigue la policy de membresía padre
 create policy "ver_modulos_de_membresia_propia"
@@ -179,6 +187,16 @@ create policy "ver_modulos_de_membresia_propia"
       select 1 from public.membresias m
       where m.id = membresia_id
         and (m.paciente_id = auth.uid() or public.mi_rol() = 'admin')
+    )
+  );
+
+create policy "paciente_insertar_modulos_membresia_propia"
+  on public.membresias_modulos for insert
+  with check (
+    exists (
+      select 1 from public.membresias m
+      where m.id = membresia_id
+        and m.paciente_id = auth.uid()
     )
   );
 

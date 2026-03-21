@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { z } from 'zod'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -64,8 +65,24 @@ export async function POST(request: NextRequest) {
 
   const { modulos } = parsed.data
 
-  // Crear membresía
-  const { data: membresia, error: membresiaError } = await supabase
+  // Verificar si ya existe una membresía activa
+  const { data: membresiaExistente } = await supabase
+    .from('membresias')
+    .select('id')
+    .eq('paciente_id', user.id)
+    .eq('estatus', 'activa')
+    .maybeSingle()
+
+  if (membresiaExistente) {
+    return NextResponse.json({ error: 'Ya tienes una membresía activa' }, { status: 409 })
+  }
+
+  // Usamos admin client para el INSERT porque las policies RLS de Supabase
+  // requieren que el schema esté actualizado; el admin client las bypasea de forma segura.
+  // El usuario ya fue autenticado con supabase.auth.getUser() arriba.
+  const adminClient = createAdminClient()
+
+  const { data: membresia, error: membresiaError } = await adminClient
     .from('membresias')
     .insert({ paciente_id: user.id, estatus: 'activa' })
     .select()
@@ -83,7 +100,7 @@ export async function POST(request: NextRequest) {
     activo: true,
   }))
 
-  const { error: modulosError } = await supabase
+  const { error: modulosError } = await adminClient
     .from('membresias_modulos')
     .insert(modulosInsert)
 

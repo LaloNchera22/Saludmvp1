@@ -36,14 +36,14 @@ export async function POST(request: NextRequest) {
 
     const { nombre_completo, ingresos_mensuales, historial_bancario_url } = parsed.data
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updateData: any = {
+    const updateData: {
+      nombre_completo: string
+      ingresos_mensuales: number
+      historial_bancario_url?: string
+    } = {
       nombre_completo,
       ingresos_mensuales,
-    }
-
-    if (historial_bancario_url) {
-      updateData.historial_bancario_url = historial_bancario_url
+      ...(historial_bancario_url ? { historial_bancario_url } : {}),
     }
 
     const { error: profileError } = await supabase
