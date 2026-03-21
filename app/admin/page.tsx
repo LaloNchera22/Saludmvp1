@@ -23,7 +23,7 @@ export default async function AdminDashboard() {
     .from('profiles')
     .select('rol')
     .eq('id', user.id)
-    .single()
+    .single() as { data: { rol: string } | null; error: unknown }
 
   if (!profile || profile.rol !== 'admin') redirect('/paciente')
 
