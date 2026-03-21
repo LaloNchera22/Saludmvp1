@@ -1,16 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
-import type { ModuloTipo } from '@/types/database'
-
-const MODULOS_VALIDOS: ModuloTipo[] = [
-  'odontologia',
-  'nutricion',
-  'medicina_general',
-  'psicologia',
-  'oftalmologia',
-]
-
 const crearMembresiaSchema = z.object({
   modulos: z
     .array(z.enum(['odontologia', 'nutricion', 'medicina_general', 'psicologia', 'oftalmologia']))
