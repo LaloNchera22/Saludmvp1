@@ -1,25 +1,8 @@
-import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { updateSession } from '@/lib/supabase/middleware';
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  const isAuthenticated = false; // mock state
-  const userRole: string = 'guest'; // force string type to avoid 'always false' ts error
-
-  if (pathname.startsWith('/paciente')) {
-    if (!isAuthenticated || (userRole !== 'paciente' && userRole !== 'admin')) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-  }
-
-  if (pathname.startsWith('/admin')) {
-    if (!isAuthenticated || userRole !== 'admin') {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-  }
-
-  return NextResponse.next();
+export async function middleware(request: NextRequest) {
+  return updateSession(request);
 }
 
 export const config = {
