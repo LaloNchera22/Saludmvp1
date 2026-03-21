@@ -51,16 +51,21 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Insertar perfil con admin client (service-role) para evitar restricción RLS
-    // cuando email confirmation está activo y la sesión todavía no existe
-    const { error: profileError } = await adminClient.from("profiles").insert({
-      id: authData.user.id,
-      nombre_completo: "", // Empty initially, to be filled in survey
-      rol: "paciente",
-      ingresos_mensuales: null,
-    });
+    // cuando email confirmation está activo y la sesión todavía no existe.
+    // Usamos upsert con ignoreDuplicates para manejar el caso en que un trigger
+    // de Supabase ya haya creado el perfil automáticamente.
+    const { error: profileError } = await adminClient.from("profiles").upsert(
+      {
+        id: authData.user.id,
+        nombre_completo: "", // Empty initially, to be filled in survey
+        rol: "paciente",
+        ingresos_mensuales: null,
+      },
+      { onConflict: "id", ignoreDuplicates: true },
+    );
 
     if (profileError) {
-      console.error("[registro] Error inserting profile:", profileError);
+      console.error("[registro] Error upserting profile:", profileError.code, profileError.message);
       return NextResponse.json(
         { error: "Error interno del servidor" },
         { status: 500 },
