@@ -112,7 +112,12 @@ export default async function PacienteDashboard() {
                     month: 'short',
                   })}
                 </span>
-                <span className="text-[11px] font-black uppercase tracking-wider">Pagar →</span>
+                <a
+                  href="/paciente/pagar"
+                  className="text-[11px] font-black uppercase tracking-wider hover:text-sereza-turquoise transition-colors"
+                >
+                  Pagar →
+                </a>
               </div>
             </>
           ) : (
