@@ -17,6 +17,16 @@ export default async function PacienteDashboard() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('nombre_completo')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.nombre_completo === '') {
+    redirect('/paciente/encuesta')
+  }
+
   // Crédito activo más reciente con cuotas
   const { data: credito } = await supabase
     .from('creditos')
