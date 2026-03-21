@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import type { Credito, Cuota, Membresia, MembresiaModulo } from '@/types/database'
 
 const MODULO_LABEL: Record<string, string> = {
   odontologia: 'Odontología',
@@ -13,10 +12,12 @@ const MODULO_LABEL: Record<string, string> = {
 export default async function PacienteDashboard() {
   const supabase = createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Crédito activo
+  // Crédito activo más reciente con cuotas
   const { data: credito } = await supabase
     .from('creditos')
     .select('*, cuotas(*)')
@@ -24,12 +25,15 @@ export default async function PacienteDashboard() {
     .in('estatus', ['activo', 'pendiente'])
     .order('created_at', { ascending: false })
     .limit(1)
-    .maybeSingle() as { data: (Credito & { cuotas: Cuota[] }) | null }
+    .maybeSingle()
 
-  // Próxima cuota pendiente
-  const proximaCuota = credito?.cuotas
-    ?.filter((c) => c.estatus === 'pendiente')
-    ?.sort((a, b) => new Date(a.fecha_vence).getTime() - new Date(b.fecha_vence).getTime())[0]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cuotas: any[] = credito?.cuotas ?? []
+  const proximaCuota = cuotas
+    .filter((c) => c.estatus === 'pendiente')
+    .sort(
+      (a, b) => new Date(a.fecha_vence).getTime() - new Date(b.fecha_vence).getTime(),
+    )[0] ?? null
 
   // Membresía activa con módulos
   const { data: membresia } = await supabase
@@ -38,9 +42,10 @@ export default async function PacienteDashboard() {
     .eq('paciente_id', user.id)
     .eq('estatus', 'activa')
     .limit(1)
-    .maybeSingle() as { data: (Membresia & { modulos: MembresiaModulo[] }) | null }
+    .maybeSingle()
 
-  const modulosActivos = membresia?.modulos?.filter((m) => m.activo) ?? []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const modulosActivos: any[] = (membresia?.modulos ?? []).filter((m: any) => m.activo)
 
   return (
     <main className="py-[120px] px-6 max-w-7xl mx-auto">
@@ -60,7 +65,7 @@ export default async function PacienteDashboard() {
                 {credito.estatus}
               </p>
               <div className="mt-8 pt-4 border-t border-border-light flex justify-between">
-                <span className="text-xs uppercase tracking-wider">Crédito Aprobado</span>
+                <span className="text-xs uppercase tracking-wider">Crédito</span>
                 <span className="font-mono text-sm">#{credito.folio}</span>
               </div>
             </>
@@ -87,7 +92,7 @@ export default async function PacienteDashboard() {
           {proximaCuota ? (
             <>
               <p className="text-4xl font-mono font-bold">
-                ${proximaCuota.monto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                ${Number(proximaCuota.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
               </p>
               <div className="mt-8 pt-4 border-t border-gray-800 flex justify-between items-center">
                 <span className="text-xs uppercase tracking-wider">
@@ -97,9 +102,7 @@ export default async function PacienteDashboard() {
                     month: 'short',
                   })}
                 </span>
-                <button className="text-[11px] font-black uppercase tracking-wider hover:text-sereza-turquoise transition-colors">
-                  Pagar Ahora →
-                </button>
+                <span className="text-[11px] font-black uppercase tracking-wider">Pagar →</span>
               </div>
             </>
           ) : (
@@ -114,7 +117,8 @@ export default async function PacienteDashboard() {
           </h2>
           {modulosActivos.length > 0 ? (
             <ul className="space-y-4 font-mono text-sm">
-              {modulosActivos.map((m) => (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {modulosActivos.map((m: any) => (
                 <li
                   key={m.id}
                   className="flex justify-between items-center pb-2 border-b border-border-light"

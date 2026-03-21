@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Cliente con service role — SOLO para rutas de servidor/admin
-// Nunca exponer al cliente. Ignora RLS.
+// Cliente service-role — solo para rutas de servidor/admin. Nunca exponer al cliente.
 export function createAdminClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
