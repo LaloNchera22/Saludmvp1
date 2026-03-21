@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -49,8 +50,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
-    // 2. Insertar perfil
-    const { error: profileError } = await supabase.from("profiles").insert({
+    // 2. Insertar perfil con admin client (service-role) para evitar restricción RLS
+    // cuando email confirmation está activo y la sesión todavía no existe
+    const adminClient = createAdminClient();
+    const { error: profileError } = await adminClient.from("profiles").insert({
       id: authData.user.id,
       nombre_completo: "", // Empty initially, to be filled in survey
       rol: "paciente",
