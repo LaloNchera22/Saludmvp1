@@ -12,6 +12,11 @@ export async function POST(request: NextRequest) {
   const limited = rateLimit(request);
   if (limited) return limited;
 
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error("[registro] SUPABASE_SERVICE_ROLE_KEY no está configurado");
+    return NextResponse.json({ error: "Error de configuración del servidor" }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
     const parsed = registroSchema.safeParse(body);
@@ -65,9 +70,13 @@ export async function POST(request: NextRequest) {
     );
 
     if (profileError) {
-      console.error("[registro] Error upserting profile:", profileError.code, profileError.message);
+      console.error("[registro] Error upserting profile:", profileError.code, profileError.message, profileError.details, profileError.hint);
+      // Limpiar el usuario de auth si el perfil falla para evitar usuarios huérfanos
+      await adminClient.auth.admin.deleteUser(authData.user.id).catch((e) =>
+        console.error("[registro] Error al limpiar usuario huérfano:", e)
+      );
       return NextResponse.json(
-        { error: "Error interno del servidor" },
+        { error: `Error al crear perfil (${profileError.code}): ${profileError.message}` },
         { status: 500 },
       );
     }
@@ -78,9 +87,11 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 },
     );
-  } catch {
+  } catch (err) {
+    console.error("[registro] Excepción no manejada:", err);
+    const message = err instanceof Error ? err.message : "Error desconocido";
     return NextResponse.json(
-      { error: "Error interno del servidor" },
+      { error: `Error interno del servidor: ${message}` },
       { status: 500 },
     );
   }

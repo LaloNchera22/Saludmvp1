@@ -142,9 +142,17 @@ create policy "paciente_actualizar_propio_perfil"
   using (id = auth.uid())
   with check (id = auth.uid());
 
+-- Permite al usuario insertar su propio perfil al registrarse
 create policy "insert_propio_perfil"
   on public.profiles for insert
   with check (id = auth.uid());
+
+-- Permite al service_role (backend) insertar/actualizar/eliminar cualquier perfil
+-- Esta policy es necesaria para el registro vía API con admin client
+create policy "service_role_gestionar_perfiles"
+  on public.profiles for all
+  using (auth.role() = 'service_role')
+  with check (auth.role() = 'service_role');
 
 -- creditos: paciente ve los suyos; admin ve todos
 create policy "paciente_ver_propios_creditos"
