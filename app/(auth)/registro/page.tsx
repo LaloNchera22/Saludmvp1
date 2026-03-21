@@ -8,11 +8,8 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 
 const registroSchema = z.object({
-  nombre_completo: z.string().min(2, 'Nombre requerido'),
   email: z.string().email('Correo inválido'),
   password: z.string().min(8, 'Mínimo 8 caracteres'),
-  ingresos_mensuales: z.string().optional(),
-  historial_bancario: z.any().optional(),
 })
 
 type RegistroForm = z.infer<typeof registroSchema>
@@ -32,12 +29,8 @@ export default function RegistroPage() {
     setServerError(null)
 
     const payload = {
-      nombre_completo: values.nombre_completo,
       email: values.email,
       password: values.password,
-      ingresos_mensuales: values.ingresos_mensuales
-        ? parseFloat(values.ingresos_mensuales.replace(/[^0-9.]/g, ''))
-        : undefined,
     }
 
     const res = await fetch('/api/auth/registro', {
@@ -87,20 +80,6 @@ export default function RegistroPage() {
 
           <div className="flex flex-col gap-2">
             <label className="text-[11px] font-black uppercase tracking-wider">
-              Nombre Completo
-            </label>
-            <input
-              type="text"
-              {...register('nombre_completo')}
-              className="border-b border-border-dark p-3 focus:outline-none focus:border-sereza-turquoise bg-transparent transition-colors"
-            />
-            {errors.nombre_completo && (
-              <span className="text-[11px] text-red-500">{errors.nombre_completo.message}</span>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-[11px] font-black uppercase tracking-wider">
               Correo Electrónico
             </label>
             <input
@@ -123,29 +102,6 @@ export default function RegistroPage() {
             {errors.password && (
               <span className="text-[11px] text-red-500">{errors.password.message}</span>
             )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-[11px] font-black uppercase tracking-wider">
-              Ingresos Mensuales Estimados
-            </label>
-            <input
-              type="text"
-              {...register('ingresos_mensuales')}
-              className="border-b border-border-dark p-3 focus:outline-none focus:border-sereza-turquoise bg-transparent transition-colors font-mono"
-              placeholder="$0.00"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-[11px] font-black uppercase tracking-wider">
-              Historial Bancario (Opcional)
-            </label>
-            <input
-              type="file"
-              {...register('historial_bancario')}
-              className="border-b border-border-dark py-3 focus:outline-none focus:border-sereza-turquoise bg-transparent transition-colors text-sm"
-            />
           </div>
 
           <div className="mt-8">

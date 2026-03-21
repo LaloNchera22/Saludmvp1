@@ -4,10 +4,8 @@ import { z } from 'zod'
 import { rateLimit } from '@/lib/rate-limit'
 
 const registroSchema = z.object({
-  nombre_completo: z.string().min(2, 'Nombre requerido'),
   email: z.string().email('Correo inválido'),
   password: z.string().min(8, 'Mínimo 8 caracteres'),
-  ingresos_mensuales: z.coerce.number().positive('Debe ser mayor a 0').optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -25,7 +23,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { nombre_completo, email, password, ingresos_mensuales } = parsed.data
+    const { email, password } = parsed.data
     const supabase = createClient()
 
     // 1. Crear usuario en auth
@@ -44,9 +42,9 @@ export async function POST(request: NextRequest) {
     // 2. Insertar perfil
     const { error: profileError } = await supabase.from('profiles').insert({
       id: authData.user.id,
-      nombre_completo,
+      nombre_completo: '', // Empty initially, to be filled in survey
       rol: 'paciente',
-      ingresos_mensuales: ingresos_mensuales ?? null,
+      ingresos_mensuales: null,
     })
 
     if (profileError) {
