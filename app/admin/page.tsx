@@ -23,7 +23,7 @@ export default async function AdminDashboard() {
     .from('profiles')
     .select('rol')
     .eq('id', user.id)
-    .single() as { data: { rol: string } | null; error: unknown }
+    .single()
 
   if (!profile || profile.rol !== 'admin') redirect('/paciente')
 
@@ -31,7 +31,7 @@ export default async function AdminDashboard() {
   const { data: stats } = await adminClient
     .from('admin_stats')
     .select('*')
-    .single() as { data: AdminStats | null }
+    .single()
 
   const s: AdminStats = stats ?? {
     total_creditos: 0,
