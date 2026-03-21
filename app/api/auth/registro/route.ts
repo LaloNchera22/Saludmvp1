@@ -62,9 +62,7 @@ export async function POST(request: NextRequest) {
     const { error: profileError } = await adminClient.from("profiles").upsert(
       {
         id: authData.user.id,
-        nombre_completo: "", // Empty initially, to be filled in survey
         rol: "paciente",
-        ingresos_mensuales: null,
       },
       { onConflict: "id", ignoreDuplicates: true },
     );

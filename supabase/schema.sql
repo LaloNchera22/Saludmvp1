@@ -17,9 +17,9 @@ create type modulo_tipo as enum ('odontologia', 'nutricion', 'medicina_general',
 -- Extiende auth.users con datos del negocio
 create table public.profiles (
   id              uuid references auth.users(id) on delete cascade primary key,
-  nombre_completo text        not null,
-  telefono        text,
   rol             rol_usuario not null default 'paciente',
+  nombre_completo text        not null default '',
+  telefono        text,
   ingresos_mensuales numeric(12, 2),
   historial_bancario_url text,   -- ruta en Storage
   score_credito   smallint    check (score_credito between 0 and 100),
