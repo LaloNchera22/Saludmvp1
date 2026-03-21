@@ -1,6 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { rateLimit } from '@/lib/rate-limit'
+
 const crearMembresiaSchema = z.object({
   modulos: z
     .array(z.enum(['odontologia', 'nutricion', 'medicina_general', 'psicologia', 'oftalmologia']))
@@ -28,13 +30,19 @@ export async function GET() {
     .limit(1)
     .maybeSingle()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[membresias] Error fetching membresia:', error)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
 
   return NextResponse.json(data)
 }
 
 // POST /api/membresias — crear o activar membresía con módulos
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const limited = rateLimit(request)
+  if (limited) return limited
+
   const supabase = createClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -42,7 +50,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
   }
 
-  const body = await request.json()
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'JSON inválido' }, { status: 400 })
+  }
+
   const parsed = crearMembresiaSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 })
@@ -58,7 +72,8 @@ export async function POST(request: Request) {
     .single()
 
   if (membresiaError) {
-    return NextResponse.json({ error: membresiaError.message }, { status: 500 })
+    console.error('[membresias] Error inserting membresia:', membresiaError)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 
   // Insertar módulos seleccionados
@@ -73,7 +88,8 @@ export async function POST(request: Request) {
     .insert(modulosInsert)
 
   if (modulosError) {
-    return NextResponse.json({ error: modulosError.message }, { status: 500 })
+    console.error('[membresias] Error inserting modulos:', modulosError)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 
   return NextResponse.json({ ...membresia, modulos: modulosInsert }, { status: 201 })

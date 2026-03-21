@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { rateLimit } from '@/lib/rate-limit'
 
 const solicitarCreditoSchema = z.object({
   monto_solicitado: z.coerce.number().positive('El monto debe ser mayor a 0'),
@@ -27,13 +28,19 @@ export async function GET() {
     .eq('paciente_id', user.id)
     .order('created_at', { ascending: false })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[creditos] Error fetching creditos:', error)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
 
   return NextResponse.json(data)
 }
 
 // POST /api/creditos — solicitar un crédito
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const limited = rateLimit(request)
+  if (limited) return limited
+
   const supabase = createClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -41,7 +48,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
   }
 
-  const body = await request.json()
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'JSON inválido' }, { status: 400 })
+  }
+
   const parsed = solicitarCreditoSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 })
@@ -51,7 +64,6 @@ export async function POST(request: Request) {
   const TASA_ANUAL = 0.18
   const tasa_interes = TASA_ANUAL / 12
 
-  // Insertar crédito en estado "pendiente" — revisión manual o algoritmo de scoring
   const { data: credito, error } = await supabase
     .from('creditos')
     .insert({
@@ -65,7 +77,10 @@ export async function POST(request: Request) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[creditos] Error inserting credito:', error)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
 
   return NextResponse.json(credito, { status: 201 })
 }

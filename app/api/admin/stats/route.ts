@@ -21,11 +21,13 @@ export async function GET() {
     return NextResponse.json({ error: 'Sin permisos' }, { status: 403 })
   }
 
-  // Usar admin client para leer la vista sin restricciones RLS
   const adminClient = createAdminClient()
   const { data, error } = await adminClient.from('admin_stats').select('*').single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[admin/stats] Error fetching stats:', error)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
 
   return NextResponse.json(data)
 }
