@@ -1,0 +1,24 @@
+
+> sereza@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 1867ms
+ ○ Compiling / ...
+ ✓ Compiled / in 6.2s (594 modules)
+ ✓ Compiled in 702ms (275 modules)
+ GET / 200 in 6989ms
+ ○ Compiling /nosotros ...
+ ✓ Compiled /nosotros in 2.6s (564 modules)
+ GET /nosotros 200 in 2808ms
+ ✓ Compiled /servicios in 242ms (566 modules)
+ GET /servicios 200 in 322ms
+ ✓ Compiled /registro in 268ms (568 modules)
+ GET /registro 200 in 328ms
+ ✓ Compiled /middleware in 338ms (72 modules)
+ ✓ Compiled /login in 228ms (570 modules)
+ GET /login 200 in 294ms
+[?25h
