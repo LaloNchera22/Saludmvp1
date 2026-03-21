@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
@@ -25,12 +24,13 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, password } = parsed.data;
-    const supabase = createClient();
 
-    // 1. Crear usuario en auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    // 1. Crear usuario en auth usando admin client para evitar rate limit de Supabase
+    const adminClient = createAdminClient();
+    const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
       email,
       password,
+      email_confirm: false,
     });
 
     if (authError || !authData.user) {
@@ -52,7 +52,6 @@ export async function POST(request: NextRequest) {
 
     // 2. Insertar perfil con admin client (service-role) para evitar restricción RLS
     // cuando email confirmation está activo y la sesión todavía no existe
-    const adminClient = createAdminClient();
     const { error: profileError } = await adminClient.from("profiles").insert({
       id: authData.user.id,
       nombre_completo: "", // Empty initially, to be filled in survey
